@@ -92,23 +92,16 @@ unsigned long WIEGAND::GetCardId (volatile unsigned long *codehigh, volatile uns
 {
 	unsigned long cardID=0;
 
-	if (bitlength==32)								// EM tag
+	if (bitlength == 26)								// EM tag
+		cardID = (*codelow & 0x1FFFFFFE) >>1;
+	
+	//Added 32 bit support (INVERTED UID)
+	if (bitlength == 32)
+	{
 		cardID = (*codelow & 0xFFFFFFFF);
 		cardID = cardID | 0x80000000;
-		//cardID = (*codelow & 0x1FFFFFE) + (*codehigh & 0x1FFFFFE) >> 1;
-	
-	//MOTIVACIO MAXIMA
-	if (bitlength != 32)								// Mifare 
-	{
-		//cardID = (*codelow & 0x1FFFFFE) >>1;
-		*codehigh = *codehigh & 0x1FFFFFFFFFF;				// only need the 2 LSB of the codehigh
-		//*codehigh <<= 30;							// shift 2 LSB to MSB		
-		*codehigh <<= 28;							// shift 2 LSB to MSB		
-		*codelow >>=1;
-		cardID = *codehigh | *codelow;
 		
 	}
-	//JEJE NI PUTA IDEA SI VA
 	return cardID;
 	
 	
