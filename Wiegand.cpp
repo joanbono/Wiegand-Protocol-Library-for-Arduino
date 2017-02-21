@@ -1,4 +1,4 @@
-#include "Wiegand.h"
+#include "Wiegand_jbono.h"
 
 volatile unsigned long WIEGAND::_cardTempHigh=0;
 volatile unsigned long WIEGAND::_cardTemp=0;
@@ -57,7 +57,7 @@ void WIEGAND::begin(int pinD0, int pinIntD0, int pinD1, int pinIntD1)
 void WIEGAND::ReadD0 ()
 {
 	_bitCount++;				// Increament bit count for Interrupt connected to D0
-	if (_bitCount>31)			// If bit count more than 31, process high bits
+	if (_bitCount>33)			// If bit count more than 31, process high bits
 	{
 		_cardTempHigh |= ((0x80000000 & _cardTemp)>>31);	//	shift value to high bits
 		_cardTempHigh <<= 1;
@@ -73,7 +73,7 @@ void WIEGAND::ReadD0 ()
 void WIEGAND::ReadD1()
 {
 	_bitCount ++;				// Increment bit count for Interrupt connected to D1
-	if (_bitCount>31)			// If bit count more than 31, process high bits
+	if (_bitCount>33)			// If bit count more than 31, process high bits
 	{
 		_cardTempHigh |= ((0x80000000 & _cardTemp)>>31);	// shift value to high bits
 		_cardTempHigh <<= 1;
@@ -92,21 +92,27 @@ unsigned long WIEGAND::GetCardId (volatile unsigned long *codehigh, volatile uns
 {
 	unsigned long cardID=0;
 
-	if (bitlength==26)								// EM tag
-		cardID = (*codelow & 0x1FFFFFE) >>1;
+	if (bitlength==32)								// EM tag
+		cardID = (*codelow & 0xFFFFFFFF);
+		cardID = cardID | 0x80000000;
+		//cardID = (*codelow & 0x1FFFFFE) + (*codehigh & 0x1FFFFFE) >> 1;
 	
 	//MOTIVACIO MAXIMA
-	if (bitlength==32)								// Mifare 
+	if (bitlength != 32)								// Mifare 
 	{
-		*codehigh = *codehigh & 0x03;				// only need the 2 LSB of the codehigh
-		*codehigh <<= 30;							// shift 2 LSB to MSB		
+		//cardID = (*codelow & 0x1FFFFFE) >>1;
+		*codehigh = *codehigh & 0x1FFFFFFFFFF;				// only need the 2 LSB of the codehigh
+		//*codehigh <<= 30;							// shift 2 LSB to MSB		
+		*codehigh <<= 28;							// shift 2 LSB to MSB		
 		*codelow >>=1;
 		cardID = *codehigh | *codelow;
+		
 	}
 	//JEJE NI PUTA IDEA SI VA
-	//return cardID;
+	return cardID;
 	
-	if (bitlength>32)								// Mifare 
+	
+	if (bitlength==34)								// Mifare 
 	{
 		*codehigh = *codehigh & 0x03;				// only need the 2 LSB of the codehigh
 		*codehigh <<= 30;							// shift 2 LSB to MSB		
@@ -143,7 +149,7 @@ bool WIEGAND::DoWiegandConversion ()
 			if (_bitCount>32)			// bit count more than 32 bits, shift high bits right to make adjustment
 				_cardTempHigh >>= 1;	
 
-			if((_bitCount==26) || (_bitCount==34))		// wiegand 26 or wiegand 34
+			if((_bitCount==26) || (_bitCount==34) || (_bitCount==32))	// wiegand 26 or wiegand 34
 			{
 				cardID = GetCardId (&_cardTempHigh, &_cardTemp, _bitCount);
 				_wiegandType=_bitCount;
