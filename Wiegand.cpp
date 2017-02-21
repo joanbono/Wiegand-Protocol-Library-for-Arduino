@@ -94,8 +94,19 @@ unsigned long WIEGAND::GetCardId (volatile unsigned long *codehigh, volatile uns
 
 	if (bitlength==26)								// EM tag
 		cardID = (*codelow & 0x1FFFFFE) >>1;
-
-	if (bitlength==34)								// Mifare 
+	
+	//MOTIVACIO MAXIMA
+	if (bitlength==32)								// Mifare 
+	{
+		*codehigh = *codehigh & 0x03;				// only need the 2 LSB of the codehigh
+		*codehigh <<= 30;							// shift 2 LSB to MSB		
+		*codelow >>=1;
+		cardID = *codehigh | *codelow;
+	}
+	//JEJE NI PUTA IDEA SI VA
+	//return cardID;
+	
+	if (bitlength>32)								// Mifare 
 	{
 		*codehigh = *codehigh & 0x03;				// only need the 2 LSB of the codehigh
 		*codehigh <<= 30;							// shift 2 LSB to MSB		
@@ -125,7 +136,8 @@ bool WIEGAND::DoWiegandConversion ()
 	
 	if ((sysTick - _lastWiegand) > 25)								// if no more signal coming through after 25ms
 	{
-		if ((_bitCount==26) || (_bitCount==34) || (_bitCount==8) || (_bitCount==4)) 	// bitCount for keypress=4 or 8, Wiegand 26=26, Wiegand 34=34
+		//ADDED || (_bitCount==32)
+		if ((_bitCount==26) || (_bitCount==34) || (_bitCount==32) || (_bitCount==8) || (_bitCount==4)) 	// bitCount for keypress=4 or 8, Wiegand 26=26, Wiegand 34=34
 		{
 			_cardTemp >>= 1;			// shift right 1 bit to get back the real value - interrupt done 1 left shift in advance
 			if (_bitCount>32)			// bit count more than 32 bits, shift high bits right to make adjustment
