@@ -28,7 +28,7 @@ Execute Arduino IDE, select Example-->Wiegand-->WiegandTest
 
 ### Example
 <pre><code>
-#include &lt;Wiegand.h&gt;
+#include &lt;Wiegand_jbono.h&gt;
 
 WIEGAND wg;
 
